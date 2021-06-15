@@ -29,7 +29,7 @@ id2 = int(input('Input your opponent id: '))
 keepPlaying = True
 while keepPlaying:
     # Create game request
-    createGameRequest = {"type": "CreateGame", "id1": id1, "id2": id2}
+    createGameRequest = {"Type": "CreateGame", "id1": id1, "id2": id2}
     createGameReqJson = json.dumps(createGameRequest)
     clientSocket.send(createGameReqJson.encode('ascii'))
     print("Client Request: ", clientSocket)
@@ -37,7 +37,7 @@ while keepPlaying:
     print("From Server: ", serverCreateResponse)
 
     # Immediately terminate game:
-    terminateGameRequest = {"type": "CreateGame", "id1": id1, "id2": id2}
+    terminateGameRequest = {"Type": "CreateGame", "id1": id1, "id2": id2}
     terminateGameReqJson = json.dumps(createGameRequest)
     clientSocket.send(terminateGameReqJson.encode('ascii'))
     print("Client Request: ", clientSocket)
