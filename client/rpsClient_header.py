@@ -22,16 +22,27 @@ serverPort = 6789
 clientSocket = socket(AF_INET, SOCK_STREAM)
 clientSocket.connect((serverName, serverPort))
 
-playerId = int(input('Input playerId: '))
-playerRSP = input('Enter r/s/p: ')[0]
+id1 = int(input('Input your playerId: '))
+id2 = int(input('Input your opponent id: '))
 
-clientRequest = {"playerId": playerId, "opponentId": playerRSP}
-clientRequestJson = json.dumps(clientRequest)
 
-clientSocket.send(clientRequestJson.encode('ascii'))
-print("Client Request: ", clientRequestJson)
+keepPlaying = True
+while keepPlaying:
+    # Create game request
+    createGameRequest = {"type": "CreateGame", "id1": id1, "id2": id2}
+    createGameReqJson = json.dumps(createGameRequest)
+    clientSocket.send(createGameReqJson.encode('ascii'))
+    print("Client Request: ", clientSocket)
+    serverCreateResponse = clientSocket.recv(1024).decode('ascii')
+    print("From Server: ", serverCreateResponse)
 
-serverResponse = clientSocket.recv(1024).decode('ascii')
-print("From Server: ", serverResponse)
+    # Immediately terminate game:
+    terminateGameRequest = {"type": "CreateGame", "id1": id1, "id2": id2}
+    terminateGameReqJson = json.dumps(createGameRequest)
+    clientSocket.send(terminateGameReqJson.encode('ascii'))
+    print("Client Request: ", clientSocket)
+    serverTerResponse = clientSocket.recv(1024).decode('ascii')
+    print("From Server: ", serverTerResponse)
 
-clientSocket.close()
+    clientSocket.close()
+    keepPlaying = False if input("Keep playing (y/n)? ") == 'n' else True
