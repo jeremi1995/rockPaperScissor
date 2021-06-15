@@ -12,26 +12,26 @@
 
 #
 # This is just a slightly modified version of the TCPClient.py code from
-# section 2.7 of the book that was used in class. 
+# section 2.7 of the book that was used in class.
 #
 
 from socket import *
+import json
 serverName = 'localhost'
 serverPort = 6789
 clientSocket = socket(AF_INET, SOCK_STREAM)
 clientSocket.connect((serverName, serverPort))
 
-sentence = input('Input lowercase sentence: ')
+playerId = int(input('Input playerId: '))
+playerRSP = input('Enter r/s/p: ')[0]
 
-clientSocket.send(sentence.encode('ascii'))
-print("Sentence sent to change to upper case: ", sentence)
+clientRequest = {"playerId": playerId, "opponentId": playerRSP}
+clientRequestJson = json.dumps(clientRequest)
 
-modifiedSentence = clientSocket.recv(1024).decode('ascii')
-print("From Server: ", modifiedSentence)
+clientSocket.send(clientRequestJson.encode('ascii'))
+print("Client Request: ", clientRequestJson)
+
+serverResponse = clientSocket.recv(1024).decode('ascii')
+print("From Server: ", serverResponse)
 
 clientSocket.close()
-
-
-
-
-
