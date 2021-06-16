@@ -86,6 +86,7 @@ while keepPlaying:
 
     waitResponseRequest = {"Type": "WaitResponse",
                            "gameId": gameId, "waitForId": id2}
+    print(f"Waiting for player {id2} to give his token...")
     gameObj = makeRequest(waitResponseRequest)["game"]
 
     showResult(gameObj)
