@@ -19,30 +19,80 @@ from socket import *
 import json
 serverName = 'localhost'
 serverPort = 6789
-clientSocket = socket(AF_INET, SOCK_STREAM)
-clientSocket.connect((serverName, serverPort))
+# clientSocket = socket(AF_INET, SOCK_STREAM)
+# clientSocket.connect((serverName, serverPort))
 
-id1 = int(input('Input your playerId: '))
-id2 = int(input('Input your opponent id: '))
+rspOptions = ['r', 'p', 's']
+
+
+def makeRequest(request):
+    # Create game request
+    clientSocket = socket(AF_INET, SOCK_STREAM)
+    clientSocket.connect((serverName, serverPort))
+
+    requestJson = json.dumps(request)
+    clientSocket.send(requestJson.encode('ascii'))
+
+    print("Client Request: ", requestJson)
+    serverResponse = clientSocket.recv(1024).decode('ascii')
+
+    print("From Server: ", serverResponse)
+    serverResponseDict = json.loads(serverResponse)
+
+    clientSocket.close()
+
+    return serverResponseDict
+
+
+def showResult(gameObj):
+    token1 = gameObj["token1"]
+    token2 = gameObj["token2"]
+    player1 = gameObj["id1"]
+    player2 = gameObj["id2"]
+
+    print("Player {player1} result: {token1}")
+    print("Player {player2} result: {token2}")
 
 
 keepPlaying = True
 while keepPlaying:
-    # Create game request
+
+    id1 = int(input('Input your playerId: '))
+    id2 = int(input('Input your opponent id: '))
+
+    # Create Game Request:
     createGameRequest = {"Type": "CreateGame", "id1": id1, "id2": id2}
-    createGameReqJson = json.dumps(createGameRequest)
-    clientSocket.send(createGameReqJson.encode('ascii'))
-    print("Client Request: ", clientSocket)
-    serverCreateResponse = clientSocket.recv(1024).decode('ascii')
-    print("From Server: ", serverCreateResponse)
+    response1 = makeRequest(createGameRequest)
+    gameId = response1["gameId"]
+
+    getGameRequest = {"Type": "GetGame", "gameId": gameId}
+    gameObj = makeRequest(getGameRequest)["game"]
+
+    # Which player am I?
+    mNum = 0
+    oNum = 0
+    if (gameObj["id1"] == id1):
+        mNum = 1
+        oNum = 2
+    elif (gameObj["id2"] == id1):
+        mNum = 2
+        oNum = 1
+
+    if gameObj[f"token{mNum}"] == "":
+        token = input("Enter a token (r, p, or s)?")
+        placeTokenRequest = {"Type": "PlaceToken",
+                             "playerId": id1, "gameId": gameId, "token": token}
+        makeRequest(placeTokenRequest)
+
+    waitResponseRequest = {"Type": "WaitResponse",
+                           "gameId": gameId, "waitForId": id2}
+    gameObj = makeRequest(waitResponseRequest)["game"]
+
+    showResult(gameObj)
 
     # Immediately terminate game:
-    terminateGameRequest = {"Type": "CreateGame", "id1": id1, "id2": id2}
-    terminateGameReqJson = json.dumps(createGameRequest)
-    clientSocket.send(terminateGameReqJson.encode('ascii'))
-    print("Client Request: ", clientSocket)
-    serverTerResponse = clientSocket.recv(1024).decode('ascii')
-    print("From Server: ", serverTerResponse)
+    terminateGameRequest = {"Type": "TerminateGame",
+                            "playerId": id1, "gameId": gameId}
+    response_n = makeRequest(terminateGameRequest)
 
-    clientSocket.close()
     keepPlaying = False if input("Keep playing (y/n)? ") == 'n' else True

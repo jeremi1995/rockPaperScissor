@@ -60,12 +60,12 @@ def createGame(requestDict):
     id2 = requestDict["id2"]
     gameId = gameExists(id1, id2)
     if gameId != -1:
-        return {"message": "Welcome back to RPS with player_{id2}!", "gameId": gameId}
+        return {"message": f"Welcome back to RPS with player_{id2}!", "gameId": gameId}
     else:
         games.append({"id1": id1, "id2": id2, "token1": "",
                      "token2": "", "terminate1": False, "terminate2": False})
         newGameId = len(games) - 1
-        return {"message": "Starting new game with player_{id2}", "gameId": newGameId}
+        return {"message": f"Starting new game with player_{id2}", "gameId": newGameId}
 
 
 def placeToken(requestDict):
@@ -99,11 +99,13 @@ def waitResponse(requestDict):
     if (gameExistsById(gameId) != -1):
         if (waitForId == games[gameId]["id1"]):
             while games[gameId]["token1"] == "":
-                pass
+                time.sleep(1)
+                print("waiting for token1...")
             return {"message": "Final game object before termination", "game": games[gameId]}
         elif (waitForId == games[gameId]["id2"]):
             while games[gameId]["token2"] == "":
-                pass
+                time.sleep(1)
+                print("waiting for token 2...")
             return {"message": "Final game object before termination", "game": games[gameId]}
     return {"message": "Game does not exist or player not part of game", "game": games[gameId]}
 
@@ -141,14 +143,14 @@ def handle_request(clientRequestDict, connectionSocket):
         responseDict = getGame(clientRequestDict)
     elif (requestType == "TerminateGame"):
         responseDict = terminateGame(clientRequestDict)
-    elif (requestType == "WaitReponse"):
+    elif (requestType == "WaitResponse"):
+        print("got here!")
         responseDict = waitResponse(clientRequestDict)
     else:
         responseDict = {"message": "Invalid request!"}
 
-    print("Received from client: ", clientRequestDict)
-    print("connectionSocket: ", connectionSocket)
-    print("responseDict: ", responseDict)
+    # print("Received from client: ", clientRequestDict)
+    # print("responseDict: ", responseDict)
     connectionSocket.send(json.dumps(responseDict).encode('ascii'))
     connectionSocket.close()
 
@@ -161,6 +163,8 @@ try:
         # Once the request is received, get the json version of it
         clientRequestJson = connectionSocket.recv(1024).decode('ascii')
         clientRequestDict = json.loads(clientRequestJson)
+
+        print(clientRequestJson)
 
         # Create a thread and start it
         thread = threading.Thread(target=handle_request, args=[
