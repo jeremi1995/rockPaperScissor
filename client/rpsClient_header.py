@@ -25,6 +25,17 @@ serverPort = 6789
 rspOptions = ['r', 'p', 's']
 
 
+def resultString(mToken, oToken):
+    if mToken == oToken:
+        return "It's a DRAW!"
+    elif mToken == 'r':
+        return "You WON!" if oToken == 's' else "You LOST!"
+    elif mToken == 'p':
+        return "You WON!" if oToken == 'r' else "You LOST!"
+    else:
+        return "You WON!" if oToken == 'p' else "You LOST!"
+
+
 def makeRequest(request):
     # Create game request
     clientSocket = socket(AF_INET, SOCK_STREAM)
@@ -44,14 +55,17 @@ def makeRequest(request):
     return serverResponseDict
 
 
-def showResult(gameObj):
+def showResult(gameObj, mNum, oNum):
     token1 = gameObj["token1"]
     token2 = gameObj["token2"]
     player1 = gameObj["id1"]
     player2 = gameObj["id2"]
+    mToken = gameObj[f"token{mNum}"]
+    oToken = gameObj[f"token{oNum}"]
 
     print(f"Player {player1} result: {token1}")
     print(f"Player {player2} result: {token2}")
+    print(resultString(mToken, oToken))
 
 
 keepPlaying = True
@@ -89,7 +103,7 @@ while keepPlaying:
     print(f"Waiting for player {id2} to give his token...")
     gameObj = makeRequest(waitResponseRequest)["game"]
 
-    showResult(gameObj)
+    showResult(gameObj, mNum, oNum)
 
     # Immediately terminate game:
     terminateGameRequest = {"Type": "TerminateGame",
