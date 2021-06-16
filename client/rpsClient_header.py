@@ -50,8 +50,8 @@ def showResult(gameObj):
     player1 = gameObj["id1"]
     player2 = gameObj["id2"]
 
-    print("Player {player1} result: {token1}")
-    print("Player {player2} result: {token2}")
+    print(f"Player {player1} result: {token1}")
+    print(f"Player {player2} result: {token2}")
 
 
 keepPlaying = True
