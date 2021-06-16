@@ -79,7 +79,7 @@ while keepPlaying:
         oNum = 1
 
     if gameObj[f"token{mNum}"] == "":
-        token = input("Enter a token (r, p, or s)?")
+        token = input("Enter a token (r, p, or s)? ")
         placeTokenRequest = {"Type": "PlaceToken",
                              "playerId": id1, "gameId": gameId, "token": token}
         makeRequest(placeTokenRequest)
