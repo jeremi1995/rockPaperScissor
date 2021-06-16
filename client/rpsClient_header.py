@@ -3,9 +3,9 @@
 #    Lab PythonRPS_Client, Computer Networking
 #    Brother Jones, CSE 354
 # Author:
-#    Your Name
+#    Jeremy Duong
 # Summary:
-#    Program description ... [fill in]
+#    This is my implementation of the Client RPS protocol
 #
 ##############################################################################
 # Note: Take-2 header goes here
@@ -17,8 +17,17 @@
 
 from socket import *
 import json
-serverName = 'localhost'
-serverPort = 6789
+import sys
+
+serverName = ""
+serverPort = 0
+if (len(sys.argv) < 3):
+    print("Usage: python rpsClient.py hostname port")
+    sys.exit(1)
+else:
+    serverName = sys.argv[1]
+    serverPort = int(sys.argv[2])
+
 # clientSocket = socket(AF_INET, SOCK_STREAM)
 # clientSocket.connect((serverName, serverPort))
 
