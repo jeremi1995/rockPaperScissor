@@ -33,10 +33,10 @@ def makeRequest(request):
     requestJson = json.dumps(request)
     clientSocket.send(requestJson.encode('ascii'))
 
-    print("Client Request: ", requestJson)
+    # print("Client Request: ", requestJson)
     serverResponse = clientSocket.recv(1024).decode('ascii')
 
-    print("From Server: ", serverResponse)
+    # print("From Server: ", serverResponse)
     serverResponseDict = json.loads(serverResponse)
 
     clientSocket.close()
