@@ -25,36 +25,42 @@
 # Return “New game with players {the other player…}” AND GameId
 
 # Else if (Token placement)
-# Check the status of the Game object associated with the 2 players specified:
-# If Game() object doesn’t exist for the 2 players specified:
-# 	Return “Invalid game”
-# If Game exists:
+#    Check the status of the Game object associated with the 2 players specified:
+#    If Game() object doesn’t exist for the 2 players specified:
+#   	Return “Invalid game”
+#    If Game exists:
 # 		Place player’s Token
 # 		Return “RPS placed” Game() object
 
-# 	Else if (Get Game):
-# 		If Game() exists:
+# Else if (Get Game):
+#    If Game() exists:
 # 			Return Game()
-# 		Else:
+# 	 Else:
 # 			Return “Game doesn’t exist”
 
-# 	Else if (TerminateGame):
-# 		If Game() exists:
+# Else if (TerminateGame):
+# 	 If Game() exists:
 # 			Set Game.terminate_{player} = True
 # 			If Game.terminate1 && Game.terminate2:
 # 				Delete Game, pop from the list
 # 				Return “Game is terminated.”
 # 			Return “Terminate Request placed”
-# 		Else:
+# 	 Else:
 # 			Return “Game doesn’t exist”
 
-# 	Else if (WaitResponse):
-# 		While (PlayerResponse is None):
-# 		Return player response
+# Else if (ResetGame):
+# 		Reset token1 and token2 to "" so the client can start the next loop
 #
 ##############################################################################
-# Note: Take-2 header goes here
 
+# Note: Take-2 Modification:
+#
+# Added:
+#    - resetGame() request handler which resets the game when 2 players
+#      have placed their request to play again
+#    - removed waitResponse() function. Moved this waiting responsibility
+#      to the client.
+#
 #
 # This is just a slightly modified version of the TCPServer.py code from
 # section 2.7 of the book that was used in class.
@@ -77,7 +83,7 @@ print('The Server is ready to receive')
 threads = []
 games = []
 
-
+# See if the game exists
 def gameExists(id1, id2):
     gameId = 0
     for game in games:
@@ -86,13 +92,13 @@ def gameExists(id1, id2):
         gameId += 1
     return -1
 
-
+# See if the game exists using gameId
 def gameExistsById(gameId):
     if (gameId < len(games)):
         return gameId
     return -1
 
-
+# Create a new game per request from client
 def createGame(requestDict):
     id1 = requestDict["id1"]
     id2 = requestDict["id2"]
@@ -101,11 +107,12 @@ def createGame(requestDict):
         return {"message": f"Welcome back to RPS with player_{id2}!", "gameId": gameId}
     else:
         games.append({"id1": id1, "id2": id2, "token1": "",
-                     "token2": "", "terminate1": False, "terminate2": False})
+                     "token2": "", "terminate1": False, "terminate2": False,
+                      "reset1": 0, "reset2": 0})
         newGameId = len(games) - 1
         return {"message": f"Starting new game with player_{id2}", "gameId": newGameId}
 
-
+# place a token per request from client
 def placeToken(requestDict):
     playerId = requestDict["playerId"]
     gameId = requestDict["gameId"]
@@ -121,33 +128,38 @@ def placeToken(requestDict):
 
     return {"message": "Cannot place token for this game!", "gameId": gameId}
 
-
+# Get send the game object back to the client
 def getGame(requestDict):
     gameId = requestDict["gameId"]
     if (gameExistsById(gameId) != -1):
-        return {"message": "Game found!", "game": games[gameId]}
+        return {"message": "Game found!", "game": games[gameId], "exists": 1}
     else:
-        return {"message": "Game does not exist!", "game": {}}
+        return {"message": "Game does not exist!", "game": {}, "exists": 0}
 
+# reset a game
+def reset(gameId):
+    games[gameId]["token1"] = ""
+    games[gameId]["token2"] = ""
 
-def waitResponse(requestDict):
+# handle resetGame request
+def resetGame(requestDict):
+    playerId = requestDict["playerId"]
     gameId = requestDict["gameId"]
-    waitForId = requestDict["waitForId"]
 
     if (gameExistsById(gameId) != -1):
-        if (waitForId == games[gameId]["id1"]):
-            while games[gameId]["token1"] == "":
-                time.sleep(1)
-                print("waiting for token1...")
-            return {"message": "Final game object before termination", "game": games[gameId]}
-        elif (waitForId == games[gameId]["id2"]):
-            while games[gameId]["token2"] == "":
-                time.sleep(1)
-                print("waiting for token 2...")
-            return {"message": "Final game object before termination", "game": games[gameId]}
-    return {"message": "Game does not exist or player not part of game", "game": games[gameId]}
+        if games[gameId]["id1"] == playerId:
+            games[gameId]["reset1"] = (games[gameId]["reset1"] + 1) % 2
+            if (games[gameId]["reset1"] == games[gameId]["reset2"]):
+                reset(gameId)
+            return {"message": "Termination request placed!", "gameId": gameId}
+        elif games[gameId]["id2"] == playerId:
+            games[gameId]["reset2"] = (games[gameId]["reset2"] + 1) % 2
+            if (games[gameId]["reset1"] == games[gameId]["reset2"]):
+                reset(gameId)
+            return {"message": "Reset request placed!", "gameId": gameId}
+    return {"message": "Cannot reset this game!", "gameId": gameId}
 
-
+# handle terminateGame request
 def terminateGame(requestDict):
     playerId = requestDict["playerId"]
     gameId = requestDict["gameId"]
@@ -165,7 +177,7 @@ def terminateGame(requestDict):
             return {"message": "Termination request placed!", "gameId": gameId}
     return {"message": "Cannot terminate this game!", "gameId": gameId}
 
-
+# handle all requests
 def handle_request(clientRequestDict, connectionSocket):
     '''This function handles all kinds of requests, not just 
         the initial connection request.
@@ -179,20 +191,20 @@ def handle_request(clientRequestDict, connectionSocket):
         responseDict = placeToken(clientRequestDict)
     elif (requestType == "GetGame"):
         responseDict = getGame(clientRequestDict)
+    elif (requestType == "ResetGame"):
+        responseDict = resetGame(clientRequestDict)
     elif (requestType == "TerminateGame"):
         responseDict = terminateGame(clientRequestDict)
-    elif (requestType == "WaitResponse"):
-        print("got here!")
-        responseDict = waitResponse(clientRequestDict)
     else:
         responseDict = {"message": "Invalid request!"}
 
-    # print("Received from client: ", clientRequestDict)
-    # print("responseDict: ", responseDict)
     connectionSocket.send(json.dumps(responseDict).encode('ascii'))
     connectionSocket.close()
 
 
+#############################################################################
+# This is where the server starts running
+#############################################################################
 try:
     while 1:
         # Wait for request from a client
